@@ -1,0 +1,127 @@
+{
+  "Comment": "CloudShrink shrink workflow",
+  "StartAt": "AcquireLock",
+  "States": {
+    "AcquireLock": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "CloudShrinkOperations",
+        "Key": {"id": {"S.$": "$.operationId"}},
+        "UpdateExpression": "SET #s = :inprogress",
+        "ConditionExpression": "attribute_not_exists(#s) OR #s = :queued",
+        "ExpressionAttributeNames": {"#s": "status"},
+        "ExpressionAttributeValues": {":inprogress": {"S": "IN_PROGRESS"}, ":queued": {"S": "QUEUED"}}
+      },
+      "Next": "Preflight"
+    },
+    "Preflight": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:ssm:startCommand",
+      "Parameters": {
+        "DocumentName": "CloudShrink-Preflight",
+        "InstanceIds.$": "$.instanceIds"
+      },
+      "Next": "SnapshotVolume"
+    },
+    "SnapshotVolume": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:ec2:createSnapshot",
+      "Parameters": {
+        "VolumeId.$": "$.volumeId",
+        "TagSpecifications": [
+          {
+            "ResourceType": "snapshot",
+            "Tags": [
+              {"Key": "cloudshrink_operation", "Value.$": "$.operationId"},
+              {"Key": "cloudshrink_enable", "Value": "true"}
+            ]
+          }
+        ]
+      },
+      "Next": "CreateNewVolume"
+    },
+    "CreateNewVolume": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:ec2:createVolume",
+      "Parameters": {
+        "AvailabilityZone.$": "$.availabilityZone",
+        "Size.$": "$.targetSizeGb",
+        "VolumeType": "gp3",
+        "TagSpecifications": [
+          {"ResourceType": "volume", "Tags": [{"Key": "cloudshrink_enable", "Value": "true"}]}
+        ]
+      },
+      "Next": "AttachNewVolume"
+    },
+    "AttachNewVolume": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:ec2:attachVolume",
+      "Parameters": {
+        "Device": "/dev/sdf",
+        "InstanceId.$": "$.instanceId",
+        "VolumeId.$": "$.newVolumeId"
+      },
+      "Next": "PrepareLVM"
+    },
+    "PrepareLVM": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:ssm:startCommand",
+      "Parameters": {
+        "DocumentName": "CloudShrink-Prepare",
+        "InstanceIds.$": "$.instanceIds",
+        "Parameters": {
+          "NewDevice": ["/dev/sdf"],
+          "VolumeGroup.$": "$.volumeGroup"
+        }
+      },
+      "Next": "LiveMigrate"
+    },
+    "LiveMigrate": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:ssm:startCommand",
+      "Parameters": {
+        "DocumentName": "CloudShrink-Migrate",
+        "InstanceIds.$": "$.instanceIds"
+      },
+      "Next": "RemoveOldPV"
+    },
+    "RemoveOldPV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:ssm:startCommand",
+      "Parameters": {
+        "DocumentName": "CloudShrink-RemoveOld",
+        "InstanceIds.$": "$.instanceIds"
+      },
+      "Next": "DetachOldVolume"
+    },
+    "DetachOldVolume": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:ec2:detachVolume",
+      "Parameters": {
+        "VolumeId.$": "$.volumeId",
+        "InstanceId.$": "$.instanceId"
+      },
+      "Next": "UpdateRecords"
+    },
+    "UpdateRecords": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "CloudShrinkVolumes",
+        "Key": {"volumeId": {"S.$": "$.volumeId"}},
+        "UpdateExpression": "SET #s = :success, targetSizeGb = :target",
+        "ExpressionAttributeNames": {"#s": "status"},
+        "ExpressionAttributeValues": {
+          ":success": {"S": "SHRUNK"},
+          ":target": {"N.$": "States.Format('{}', $.targetSizeGb)"}
+        }
+      },
+      "Next": "ReleaseLock"
+    },
+    "ReleaseLock": {
+      "Type": "Pass",
+      "End": true
+    }
+  }
+}

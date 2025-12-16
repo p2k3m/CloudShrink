@@ -1,0 +1,13 @@
+schemaVersion: '2.2'
+description: Remove old PV after migration
+parameters:
+  SourcePv:
+    type: String
+mainSteps:
+  - action: aws:runShellScript
+    name: cleanup
+    inputs:
+      runCommand:
+        - set -euo pipefail
+        - vgreduce $(pvs --no-headings -o vg_name ${SourcePv} | xargs) ${SourcePv}
+        - pvremove ${SourcePv}

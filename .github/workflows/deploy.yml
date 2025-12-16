@@ -1,0 +1,44 @@
+name: deploy
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+      - name: Package backend
+        run: |
+          mkdir -p artifacts
+          zip -r artifacts/api_handler.zip backend/lambdas/api_handler
+          zip -r artifacts/discovery_worker.zip backend/lambdas/discovery_worker
+          zip -r artifacts/evaluation_worker.zip backend/lambdas/evaluation_worker
+          zip -r artifacts/step_trigger.zip backend/lambdas/step_trigger
+      - name: Upload artifacts
+        run: |
+          aws s3 cp artifacts s3://${{ secrets.AWS_ACCOUNT_ID }}-${{ secrets.STACK_NAME }}-artifacts/ --recursive
+      - name: Deploy CloudFormation
+        run: |
+          aws cloudformation deploy \
+            --stack-name ${{ secrets.STACK_NAME }} \
+            --template-file infrastructure/central/template.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --region ${{ secrets.AWS_REGION }}
+      - name: Sync frontend
+        run: |
+          aws s3 sync frontend/dist s3://${{ secrets.AWS_ACCOUNT_ID }}-${{ secrets.STACK_NAME }}-frontend

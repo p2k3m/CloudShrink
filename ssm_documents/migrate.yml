@@ -1,0 +1,14 @@
+schemaVersion: '2.2'
+description: Live migrate LVM PV using pvmove
+parameters:
+  SourcePv:
+    type: String
+  NewPv:
+    type: String
+mainSteps:
+  - action: aws:runShellScript
+    name: migrate
+    inputs:
+      runCommand:
+        - set -euo pipefail
+        - pvmove --atomic ${SourcePv} ${NewPv}

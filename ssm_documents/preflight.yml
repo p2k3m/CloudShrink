@@ -1,0 +1,12 @@
+schemaVersion: '2.2'
+description: Preflight checks for CloudShrink
+mainSteps:
+  - action: aws:runShellScript
+    name: preflight
+    inputs:
+      runCommand:
+        - set -euo pipefail
+        - command -v lvs
+        - command -v pvs
+        - command -v vgs
+        - echo "preflight complete"
