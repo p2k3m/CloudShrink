@@ -1,0 +1,21 @@
+schemaVersion: '2.2'
+description: CloudShrink discovery for LVM volumes
+parameters:
+  TargetDevice:
+    type: String
+    description: Device to inspect
+mainSteps:
+  - action: aws:runShellScript
+    name: discovery
+    inputs:
+      runCommand:
+        - set -euo pipefail
+        - device=${TargetDevice}
+        - mountpoint=$(lsblk -no MOUNTPOINT "$device")
+        - fs=$(lsblk -no FSTYPE "$device")
+        - vg=$(pvs --no-headings -o vg_name "$device" | xargs)
+        - lv=$(lvs --no-headings -o lv_path "$vg" | head -n1 | xargs)
+        - used=$(df -BG "$mountpoint" | awk 'NR==2 {print $3}' | tr -d 'G')
+        - size=$(df -BG "$mountpoint" | awk 'NR==2 {print $2}' | tr -d 'G')
+        - free_percent=$(( (size-used)*100/size ))
+        - echo "{\"mountpoint\":\"$mountpoint\",\"filesystem\":\"$fs\",\"vg\":\"$vg\",\"lv\":\"$lv\",\"usedGb\":$used,\"sizeGb\":$size,\"freePercent\":$free_percent}"

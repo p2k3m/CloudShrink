@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudShrink satellite role
+Parameters:
+  ExternalId:
+    Type: String
+  CentralAccountId:
+    Type: String
+Resources:
+  CloudShrinkSatelliteRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudShrinkSatelliteRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${CentralAccountId}:role/CloudShrinkOrchestrator
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref ExternalId
+      Policies:
+        - PolicyName: CloudShrinkSatellitePermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:DescribeVolumes
+                  - ec2:DescribeSnapshots
+                  - ec2:CreateSnapshot
+                  - ec2:CreateVolume
+                  - ec2:AttachVolume
+                  - ec2:DetachVolume
+                  - ec2:DeleteVolume
+                  - ec2:CreateTags
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    ec2:ResourceTag/cloudshrink_enable: 'true'
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ssm:GetCommandInvocation
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+                Condition:
+                  StringLikeIfExists:
+                    iam:PassedToService:
+                      - ec2.amazonaws.com
+Outputs:
+  RoleArn:
+    Value: !GetAtt CloudShrinkSatelliteRole.Arn
