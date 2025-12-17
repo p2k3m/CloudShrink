@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ env.DEPLOY_ROLE_ARN != '' }}
+    if: ${{ secrets.DEPLOY_ROLE_ARN != '' }}
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ap-south-1
