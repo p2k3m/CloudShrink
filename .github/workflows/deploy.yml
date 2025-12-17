@@ -13,10 +13,7 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ env.DEPLOY_ROLE_ARN != '' }}
-    env:
-      DEPLOY_ROLE_ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
-      AWS_REGION: ${{ env.AWS_REGION }}
+    if: ${{ secrets.DEPLOY_ROLE_ARN != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
