@@ -8,16 +8,15 @@ permissions:
   id-token: write
   contents: read
 
-env:
-  AWS_REGION: ap-south-1
-  DEPLOY_ROLE_ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  STACK_NAME: ${{ secrets.STACK_NAME }}
-
 jobs:
   deploy:
-    if: ${{ env.DEPLOY_ROLE_ARN != '' }}
+    if: ${{ secrets.DEPLOY_ROLE_ARN != '' }}
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ap-south-1
+      DEPLOY_ROLE_ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      STACK_NAME: ${{ secrets.STACK_NAME }}
     steps:
       - uses: actions/checkout@v4
 
