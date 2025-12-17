@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ secrets.DEPLOY_ROLE_ARN != '' }}
+    if: ${{ env.DEPLOY_ROLE_ARN != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
