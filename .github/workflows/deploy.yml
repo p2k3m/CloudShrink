@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ secrets.DEPLOY_ROLE_ARN != '' }}
+    if: ${{ env.DEPLOY_ROLE_ARN != '' }}
     runs-on: ubuntu-latest
     env:
       DEPLOY_ROLE_ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
