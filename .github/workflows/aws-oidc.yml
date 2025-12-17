@@ -17,6 +17,11 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::957650740525:role/GitHubActions-CloudShrink
           aws-region: ap-south-1
+          audience: sts.amazonaws.com
+          output-credentials: true
+
+      - name: Export region
+        run: echo "AWS_REGION=ap-south-1" >> $GITHUB_ENV
 
       - name: Who am I?
         run: aws sts get-caller-identity # make sure it uses this
