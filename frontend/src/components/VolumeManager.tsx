@@ -1,10 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { getVolumes, triggerOperation } from '../services/api';
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 
 export default function VolumeManager() {
   const [filter, setFilter] = useState<'eligible' | 'ineligible' | 'all'>('eligible');
   const { data, isLoading, refetch } = useQuery({ queryKey: ['volumes', filter], queryFn: () => getVolumes(filter) });
+
+  const handleFilterChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value as 'eligible' | 'ineligible' | 'all';
+    setFilter(value);
+  };
 
   const handleExecute = async (volumeId: string) => {
     await triggerOperation(volumeId);
@@ -18,7 +23,7 @@ export default function VolumeManager() {
       <div className="toolbar">
         <label>
           Filter:
-          <select value={filter} onChange={(e) => setFilter(e.target.value as any)}>
+          <select value={filter} onChange={handleFilterChange}>
             <option value="eligible">Eligible</option>
             <option value="ineligible">Ineligible</option>
             <option value="all">All</option>
