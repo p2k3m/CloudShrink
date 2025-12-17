@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
 
+env:
+  AWS_REGION: ap-south-1
+
 permissions:
   id-token: write
   contents: read
@@ -16,7 +19,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.DEPLOY_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
       - name: Build frontend
         run: |
           cd frontend
@@ -38,7 +41,7 @@ jobs:
             --stack-name ${{ secrets.STACK_NAME }} \
             --template-file infrastructure/central/template.yaml \
             --capabilities CAPABILITY_NAMED_IAM \
-            --region ${{ secrets.AWS_REGION }}
+            --region ${{ env.AWS_REGION }}
       - name: Sync frontend
         run: |
           aws s3 sync frontend/dist s3://${{ secrets.AWS_ACCOUNT_ID }}-${{ secrets.STACK_NAME }}-frontend
