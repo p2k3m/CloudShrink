@@ -1,4 +1,5 @@
 name: deploy
+
 on:
   push:
     branches: [main]
@@ -7,27 +8,34 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  AWS_REGION: ap-south-1
+  DEPLOY_ROLE_ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  STACK_NAME: ${{ secrets.STACK_NAME }}
+
 jobs:
   deploy:
-    if: ${{ secrets.DEPLOY_ROLE_ARN != '' }}
+    if: ${{ env.DEPLOY_ROLE_ARN != '' }}
     runs-on: ubuntu-latest
-    env:
-      AWS_REGION: ap-south-1
-      DEPLOY_ROLE_ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Configure AWS credentials
+        if: ${{ env.DEPLOY_ROLE_ARN != '' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.DEPLOY_ROLE_ARN }}
-          aws-region: ap-south-1
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
           audience: sts.amazonaws.com
           output-credentials: true
+
       - name: Build frontend
         run: |
           cd frontend
           npm install
           npm run build
+
       - name: Package backend
         run: |
           mkdir -p artifacts
@@ -35,16 +43,19 @@ jobs:
           zip -r artifacts/discovery_worker.zip backend/lambdas/discovery_worker
           zip -r artifacts/evaluation_worker.zip backend/lambdas/evaluation_worker
           zip -r artifacts/step_trigger.zip backend/lambdas/step_trigger
+
       - name: Upload artifacts
         run: |
-          aws s3 cp artifacts s3://${{ secrets.AWS_ACCOUNT_ID }}-${{ secrets.STACK_NAME }}-artifacts/ --recursive
+          aws s3 cp artifacts s3://${{ env.AWS_ACCOUNT_ID }}-${{ env.STACK_NAME }}-artifacts/ --recursive
+
       - name: Deploy CloudFormation
         run: |
           aws cloudformation deploy \
-            --stack-name ${{ secrets.STACK_NAME }} \
+            --stack-name ${{ env.STACK_NAME }} \
             --template-file infrastructure/central/template.yaml \
             --capabilities CAPABILITY_NAMED_IAM \
-            --region ap-south-1
+            --region ${{ env.AWS_REGION }}
+
       - name: Sync frontend
         run: |
-          aws s3 sync frontend/dist s3://${{ secrets.AWS_ACCOUNT_ID }}-${{ secrets.STACK_NAME }}-frontend
+          aws s3 sync frontend/dist s3://${{ env.AWS_ACCOUNT_ID }}-${{ env.STACK_NAME }}-frontend
