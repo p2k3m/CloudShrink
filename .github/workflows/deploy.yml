@@ -3,10 +3,6 @@ on:
   push:
     branches: [main]
 
-env:
-  AWS_REGION: ap-south-1
-  DEPLOY_ROLE_ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
-
 permissions:
   id-token: write
   contents: read
@@ -15,6 +11,9 @@ jobs:
   deploy:
     if: ${{ env.DEPLOY_ROLE_ARN != '' }}
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ap-south-1
+      DEPLOY_ROLE_ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
     steps:
       - uses: actions/checkout@v4
       - name: Configure AWS credentials
