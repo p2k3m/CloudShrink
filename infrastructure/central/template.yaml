@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
+
 Description: CloudShrink central account stack
 Parameters:
   StackName:
@@ -124,15 +124,48 @@ Resources:
           ForwardedValues:
             QueryString: true
         PriceClass: PriceClass_100
+  ApiFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ApiDynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt AccountsTable.Arn
+                  - !GetAtt PoliciesTable.Arn
+                  - !GetAtt VolumesTable.Arn
+                  - !GetAtt OperationsTable.Arn
   ApiFunction:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${StackName}-api"
       Runtime: python3.12
       Handler: app.lambda_handler
-      CodeUri:
-        Bucket: !Ref ArtifactsBucket
-        Key: !Ref ApiHandlerKey
+      Role: !GetAtt ApiFunctionRole.Arn
+      Code:
+        S3Bucket: !Ref ArtifactsBucket
+        S3Key: !Ref ApiHandlerKey
       Timeout: 30
       Environment:
         Variables:
@@ -140,15 +173,6 @@ Resources:
           POLICIES_TABLE: !Ref PoliciesTable
           VOLUMES_TABLE: !Ref VolumesTable
           OPERATIONS_TABLE: !Ref OperationsTable
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref AccountsTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PoliciesTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref VolumesTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref OperationsTable
   ApiGateway:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -221,66 +245,131 @@ Resources:
       FunctionName: !Ref ApiFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*
+  DiscoveryFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DiscoveryPolicies
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource: !GetAtt VolumesTable.Arn
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: !Sub arn:aws:iam::*:role/CloudShrinkSatelliteRole
   DiscoveryFunction:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${StackName}-discovery"
       Runtime: python3.12
       Handler: app.lambda_handler
-      CodeUri:
-        Bucket: !Ref ArtifactsBucket
-        Key: !Ref DiscoveryWorkerKey
+      Role: !GetAtt DiscoveryFunctionRole.Arn
+      Code:
+        S3Bucket: !Ref ArtifactsBucket
+        S3Key: !Ref DiscoveryWorkerKey
       Timeout: 900
       Environment:
         Variables:
           VOLUMES_TABLE: !Ref VolumesTable
           SATELLITE_ROLE_NAME: CloudShrinkSatelliteRole
+  EvaluationFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref VolumesTable
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action: sts:AssumeRole
-              Resource: !Sub arn:aws:iam::*:role/CloudShrinkSatelliteRole
+        - PolicyName: EvaluationPolicies
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt PoliciesTable.Arn
+                  - !GetAtt VolumesTable.Arn
   EvaluationFunction:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${StackName}-evaluation"
       Runtime: python3.12
       Handler: app.lambda_handler
-      CodeUri:
-        Bucket: !Ref ArtifactsBucket
-        Key: !Ref EvaluationWorkerKey
+      Role: !GetAtt EvaluationFunctionRole.Arn
+      Code:
+        S3Bucket: !Ref ArtifactsBucket
+        S3Key: !Ref EvaluationWorkerKey
       Timeout: 300
       Environment:
         Variables:
           POLICIES_TABLE: !Ref PoliciesTable
           VOLUMES_TABLE: !Ref VolumesTable
+  StepTriggerFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PoliciesTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref VolumesTable
+        - PolicyName: TriggerPolicies
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: states:StartExecution
+                Resource: !GetAtt ShrinkStateMachine.Arn
   StepTriggerFunction:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${StackName}-trigger"
       Runtime: python3.12
       Handler: app.lambda_handler
-      CodeUri:
-        Bucket: !Ref ArtifactsBucket
-        Key: !Ref StepTriggerKey
+      Role: !GetAtt StepTriggerFunctionRole.Arn
+      Code:
+        S3Bucket: !Ref ArtifactsBucket
+        S3Key: !Ref StepTriggerKey
       Timeout: 60
       Environment:
         Variables:
           STATE_MACHINE_ARN: !GetAtt ShrinkStateMachine.Arn
-      Policies:
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action: states:StartExecution
-              Resource: !GetAtt ShrinkStateMachine.Arn
   ShrinkStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
