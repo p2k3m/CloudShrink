@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
 Description: CloudShrink central account stack
 Parameters:
   StackName:
@@ -124,14 +125,14 @@ Resources:
             QueryString: true
         PriceClass: PriceClass_100
   ApiFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${StackName}-api"
       Runtime: python3.12
       Handler: app.lambda_handler
-      Code:
-        S3Bucket: !Ref ArtifactsBucket
-        S3Key: !Ref ApiHandlerKey
+      CodeUri:
+        Bucket: !Ref ArtifactsBucket
+        Key: !Ref ApiHandlerKey
       Timeout: 30
       Environment:
         Variables:
@@ -221,14 +222,14 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*
   DiscoveryFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${StackName}-discovery"
       Runtime: python3.12
       Handler: app.lambda_handler
-      Code:
-        S3Bucket: !Ref ArtifactsBucket
-        S3Key: !Ref DiscoveryWorkerKey
+      CodeUri:
+        Bucket: !Ref ArtifactsBucket
+        Key: !Ref DiscoveryWorkerKey
       Timeout: 900
       Environment:
         Variables:
@@ -242,14 +243,14 @@ Resources:
               Action: sts:AssumeRole
               Resource: !Sub arn:aws:iam::*:role/CloudShrinkSatelliteRole
   EvaluationFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${StackName}-evaluation"
       Runtime: python3.12
       Handler: app.lambda_handler
-      Code:
-        S3Bucket: !Ref ArtifactsBucket
-        S3Key: !Ref EvaluationWorkerKey
+      CodeUri:
+        Bucket: !Ref ArtifactsBucket
+        Key: !Ref EvaluationWorkerKey
       Timeout: 300
       Environment:
         Variables:
@@ -261,14 +262,14 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref VolumesTable
   StepTriggerFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${StackName}-trigger"
       Runtime: python3.12
       Handler: app.lambda_handler
-      Code:
-        S3Bucket: !Ref ArtifactsBucket
-        S3Key: !Ref StepTriggerKey
+      CodeUri:
+        Bucket: !Ref ArtifactsBucket
+        Key: !Ref StepTriggerKey
       Timeout: 60
       Environment:
         Variables:
