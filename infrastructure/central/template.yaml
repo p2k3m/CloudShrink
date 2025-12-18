@@ -238,7 +238,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref VolumesTable
-        - Statement:
+        - Version: '2012-10-17'
+          Statement:
             - Effect: Allow
               Action: sts:AssumeRole
               Resource: !Sub arn:aws:iam::*:role/CloudShrinkSatelliteRole
@@ -275,7 +276,8 @@ Resources:
         Variables:
           STATE_MACHINE_ARN: !GetAtt ShrinkStateMachine.Arn
       Policies:
-        - Statement:
+        - Version: '2012-10-17'
+          Statement:
             - Effect: Allow
               Action: states:StartExecution
               Resource: !GetAtt ShrinkStateMachine.Arn
