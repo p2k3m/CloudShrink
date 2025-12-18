@@ -62,6 +62,7 @@ jobs:
             --capabilities CAPABILITY_NAMED_IAM \
             --region ${{ env.AWS_REGION }} \
             --parameter-overrides \
+              StackName=${{ env.STACK_NAME }} \
               ArtifactsBucket=${{ env.AWS_ACCOUNT_ID }}-${{ env.STACK_NAME }}-artifacts \
               ApiHandlerKey=api_handler.zip \
               DiscoveryWorkerKey=discovery_worker.zip \
