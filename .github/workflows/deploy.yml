@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ap-south-1
-      DEPLOY_ROLE_ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-      STACK_NAME: ${{ secrets.STACK_NAME }}
+      DEPLOY_ROLE_ARN: arn:aws:iam::957650740525:role/GitHubActions-CloudShrink
+      AWS_ACCOUNT_ID: '957650740525'
+      STACK_NAME: CloudShrink
     steps:
       - uses: actions/checkout@v4
 
