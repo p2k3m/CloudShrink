@@ -7,6 +7,25 @@ Parameters:
   FrontendDomainName:
     Type: String
     Default: ''
+  ArtifactsBucket:
+    Type: String
+    Description: S3 bucket for deployment artifacts
+  ApiHandlerKey:
+    Type: String
+    Description: S3 key for API handler
+  DiscoveryWorkerKey:
+    Type: String
+    Description: S3 key for Discovery worker
+  EvaluationWorkerKey:
+    Type: String
+    Description: S3 key for Evaluation worker
+  StepTriggerKey:
+    Type: String
+    Description: S3 key for Step Trigger
+  StateMachineKey:
+    Type: String
+    Description: S3 key for State Machine definition
+
 Resources:
   AccountsTable:
     Type: AWS::DynamoDB::Table
@@ -111,8 +130,8 @@ Resources:
       Runtime: python3.12
       Handler: app.lambda_handler
       Code:
-        S3Bucket: placeholder
-        S3Key: placeholder
+        S3Bucket: !Ref ArtifactsBucket
+        S3Key: !Ref ApiHandlerKey
       Timeout: 30
       Environment:
         Variables:
@@ -208,8 +227,8 @@ Resources:
       Runtime: python3.12
       Handler: app.lambda_handler
       Code:
-        S3Bucket: placeholder
-        S3Key: placeholder
+        S3Bucket: !Ref ArtifactsBucket
+        S3Key: !Ref DiscoveryWorkerKey
       Timeout: 900
       Environment:
         Variables:
@@ -229,8 +248,8 @@ Resources:
       Runtime: python3.12
       Handler: app.lambda_handler
       Code:
-        S3Bucket: placeholder
-        S3Key: placeholder
+        S3Bucket: !Ref ArtifactsBucket
+        S3Key: !Ref EvaluationWorkerKey
       Timeout: 300
       Environment:
         Variables:
@@ -248,8 +267,8 @@ Resources:
       Runtime: python3.12
       Handler: app.lambda_handler
       Code:
-        S3Bucket: placeholder
-        S3Key: placeholder
+        S3Bucket: !Ref ArtifactsBucket
+        S3Key: !Ref StepTriggerKey
       Timeout: 60
       Environment:
         Variables:
@@ -264,8 +283,8 @@ Resources:
     Properties:
       StateMachineName: !Sub "${StackName}-shrink"
       DefinitionS3Location:
-        Bucket: placeholder
-        Key: placeholder
+        Bucket: !Ref ArtifactsBucket
+        Key: !Ref StateMachineKey
       RoleArn: !GetAtt StateMachineRole.Arn
   StateMachineRole:
     Type: AWS::IAM::Role
