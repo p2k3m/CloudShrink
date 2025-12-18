@@ -41,6 +41,14 @@ jobs:
           zip -r artifacts/evaluation_worker.zip backend/lambdas/evaluation_worker
           zip -r artifacts/step_trigger.zip backend/lambdas/step_trigger
 
+      - name: Create Artifacts Bucket
+        run: |
+          aws s3api head-bucket --bucket ${{ env.AWS_ACCOUNT_ID }}-${{ env.STACK_NAME }}-artifacts || \
+          aws s3api create-bucket \
+            --bucket ${{ env.AWS_ACCOUNT_ID }}-${{ env.STACK_NAME }}-artifacts \
+            --region ${{ env.AWS_REGION }} \
+            --create-bucket-configuration LocationConstraint=${{ env.AWS_REGION }}
+
       - name: Upload artifacts
         run: |
           aws s3 cp artifacts s3://${{ env.AWS_ACCOUNT_ID }}-${{ env.STACK_NAME }}-artifacts/ --recursive
