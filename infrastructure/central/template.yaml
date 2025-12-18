@@ -105,6 +105,9 @@ Resources:
             Resource: !Sub "${FrontendBucket.Arn}/*"
   CloudFrontOAI:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "OAI for ${StackName}"
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
