@@ -15,7 +15,7 @@ jobs:
       AWS_REGION: ap-south-1
       DEPLOY_ROLE_ARN: arn:aws:iam::957650740525:role/GitHubActions-CloudShrink
       AWS_ACCOUNT_ID: '957650740525'
-      STACK_NAME: CloudShrink
+      STACK_NAME: cloudshrink
     steps:
       - uses: actions/checkout@v4
 
