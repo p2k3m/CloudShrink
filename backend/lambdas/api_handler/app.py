@@ -68,6 +68,15 @@ def lambda_handler(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
       return asdict(Response.ok(response.get('Item') or {}))
     if route_key == 'POST /scan':
       return asdict(Response.ok({'message': 'Scan trigger accepted'}))
+    if route_key == 'GET /dashboard':
+      accounts = _scan_table(ACCOUNTS_TABLE)
+      volumes = _scan_table(VOLUMES_TABLE)
+      protected = [v for v in volumes if str(v.get('eligible', '')).lower() == 'true']
+      return asdict(Response.ok({
+        'savings': '0 GB-month',  # Placeholder logic
+        'protected_volumes': len(protected),
+        'account_count': len(accounts)
+      }))
   except Exception as exc:  # noqa: BLE001
     logger.exception('Unhandled error')
     return asdict(Response.error(str(exc), status=500))
