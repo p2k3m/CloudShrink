@@ -7,17 +7,30 @@
       "Resource": "arn:aws:states:::dynamodb:updateItem",
       "Parameters": {
         "TableName": "CloudShrinkOperations",
-        "Key": {"id": {"S.$": "$.operationId"}},
+        "Key": {
+          "id": {
+            "S.$": "$.operationId"
+          }
+        },
         "UpdateExpression": "SET #s = :inprogress",
         "ConditionExpression": "attribute_not_exists(#s) OR #s = :queued",
-        "ExpressionAttributeNames": {"#s": "status"},
-        "ExpressionAttributeValues": {":inprogress": {"S": "IN_PROGRESS"}, ":queued": {"S": "QUEUED"}}
+        "ExpressionAttributeNames": {
+          "#s": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":inprogress": {
+            "S": "IN_PROGRESS"
+          },
+          ":queued": {
+            "S": "QUEUED"
+          }
+        }
       },
       "Next": "Preflight"
     },
     "Preflight": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::aws-sdk:ssm:startCommand",
+      "Resource": "arn:aws:states:::aws-sdk:ssm:sendCommand",
       "Parameters": {
         "DocumentName": "CloudShrink-Preflight",
         "InstanceIds.$": "$.instanceIds"
@@ -33,8 +46,14 @@
           {
             "ResourceType": "snapshot",
             "Tags": [
-              {"Key": "cloudshrink_operation", "Value.$": "$.operationId"},
-              {"Key": "cloudshrink_enable", "Value": "true"}
+              {
+                "Key": "cloudshrink_operation",
+                "Value.$": "$.operationId"
+              },
+              {
+                "Key": "cloudshrink_enable",
+                "Value": "true"
+              }
             ]
           }
         ]
@@ -49,7 +68,15 @@
         "Size.$": "$.targetSizeGb",
         "VolumeType": "gp3",
         "TagSpecifications": [
-          {"ResourceType": "volume", "Tags": [{"Key": "cloudshrink_enable", "Value": "true"}]}
+          {
+            "ResourceType": "volume",
+            "Tags": [
+              {
+                "Key": "cloudshrink_enable",
+                "Value": "true"
+              }
+            ]
+          }
         ]
       },
       "Next": "AttachNewVolume"
@@ -66,12 +93,14 @@
     },
     "PrepareLVM": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::aws-sdk:ssm:startCommand",
+      "Resource": "arn:aws:states:::aws-sdk:ssm:sendCommand",
       "Parameters": {
         "DocumentName": "CloudShrink-Prepare",
         "InstanceIds.$": "$.instanceIds",
         "Parameters": {
-          "NewDevice": ["/dev/sdf"],
+          "NewDevice": [
+            "/dev/sdf"
+          ],
           "VolumeGroup.$": "$.volumeGroup"
         }
       },
@@ -79,7 +108,7 @@
     },
     "LiveMigrate": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::aws-sdk:ssm:startCommand",
+      "Resource": "arn:aws:states:::aws-sdk:ssm:sendCommand",
       "Parameters": {
         "DocumentName": "CloudShrink-Migrate",
         "InstanceIds.$": "$.instanceIds"
@@ -88,7 +117,7 @@
     },
     "RemoveOldPV": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::aws-sdk:ssm:startCommand",
+      "Resource": "arn:aws:states:::aws-sdk:ssm:sendCommand",
       "Parameters": {
         "DocumentName": "CloudShrink-RemoveOld",
         "InstanceIds.$": "$.instanceIds"
@@ -109,12 +138,22 @@
       "Resource": "arn:aws:states:::dynamodb:updateItem",
       "Parameters": {
         "TableName": "CloudShrinkVolumes",
-        "Key": {"volumeId": {"S.$": "$.volumeId"}},
+        "Key": {
+          "volumeId": {
+            "S.$": "$.volumeId"
+          }
+        },
         "UpdateExpression": "SET #s = :success, targetSizeGb = :target",
-        "ExpressionAttributeNames": {"#s": "status"},
+        "ExpressionAttributeNames": {
+          "#s": "status"
+        },
         "ExpressionAttributeValues": {
-          ":success": {"S": "SHRUNK"},
-          ":target": {"N.$": "States.Format('{}', $.targetSizeGb)"}
+          ":success": {
+            "S": "SHRUNK"
+          },
+          ":target": {
+            "N.$": "States.Format('{}', $.targetSizeGb)"
+          }
         }
       },
       "Next": "ReleaseLock"
