@@ -36,10 +36,10 @@ jobs:
       - name: Package backend
         run: |
           mkdir -p artifacts
-          zip -j artifacts/api_handler.zip backend/lambdas/api_handler/app.py
-          zip -j artifacts/discovery_worker.zip backend/lambdas/discovery_worker/app.py
-          zip -j artifacts/evaluation_worker.zip backend/lambdas/evaluation_worker/app.py
-          zip -j artifacts/step_trigger.zip backend/lambdas/step_trigger/app.py
+          zip -j artifacts/api_handler-${{ github.sha }}.zip backend/lambdas/api_handler/app.py
+          zip -j artifacts/discovery_worker-${{ github.sha }}.zip backend/lambdas/discovery_worker/app.py
+          zip -j artifacts/evaluation_worker-${{ github.sha }}.zip backend/lambdas/evaluation_worker/app.py
+          zip -j artifacts/step_trigger-${{ github.sha }}.zip backend/lambdas/step_trigger/app.py
 
       - name: Create Artifacts Bucket
         run: |
@@ -64,10 +64,10 @@ jobs:
             --parameter-overrides \
               StackName=${{ env.STACK_NAME }} \
               ArtifactsBucket=${{ env.AWS_ACCOUNT_ID }}-${{ env.STACK_NAME }}-artifacts \
-              ApiHandlerKey=api_handler.zip \
-              DiscoveryWorkerKey=discovery_worker.zip \
-              EvaluationWorkerKey=evaluation_worker.zip \
-              StepTriggerKey=step_trigger.zip \
+              ApiHandlerKey=api_handler-${{ github.sha }}.zip \
+              DiscoveryWorkerKey=discovery_worker-${{ github.sha }}.zip \
+              EvaluationWorkerKey=evaluation_worker-${{ github.sha }}.zip \
+              StepTriggerKey=step_trigger-${{ github.sha }}.zip \
               StateMachineKey=statemachine/workflow.asl.json
 
       - name: Sync frontend
