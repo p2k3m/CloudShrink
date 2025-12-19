@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getIdToken } from './auth';
 
-const apiBase = import.meta.env.VITE_API_BASE ?? 'https://example.execute-api.local';
+const apiBase = import.meta.env.VITE_API_BASE ?? 'https://50a1twjii6.execute-api.ap-south-1.amazonaws.com';
 
 async function client() {
   const token = await getIdToken();
