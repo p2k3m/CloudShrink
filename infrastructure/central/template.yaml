@@ -11,6 +11,10 @@ Parameters:
   ArtifactsBucket:
     Type: String
     Description: S3 bucket for deployment artifacts
+  SatelliteExternalId:
+    Type: String
+    Default: 'cloudshrink-self-managed'
+    Description: External ID for the self-managed satellite role
   ApiHandlerKey:
     Type: String
     Description: S3 key for API handler
@@ -181,6 +185,7 @@ Resources:
           POLICIES_TABLE: !Ref PoliciesTable
           VOLUMES_TABLE: !Ref VolumesTable
           OPERATIONS_TABLE: !Ref OperationsTable
+          SATELLITE_EXTERNAL_ID: !Ref SatelliteExternalId
   ApiGateway:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -437,6 +442,53 @@ Resources:
                 Action:
                   - ssm:SendCommand
                 Resource: '*'
+  CloudShrinkSatelliteRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudShrinkSatelliteRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref SatelliteExternalId
+      Policies:
+        - PolicyName: CloudShrinkSatellitePermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:DescribeVolumes
+                  - ec2:DescribeSnapshots
+                  - ec2:CreateSnapshot
+                  - ec2:CreateVolume
+                  - ec2:AttachVolume
+                  - ec2:DetachVolume
+                  - ec2:DeleteVolume
+                  - ec2:CreateTags
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    ec2:ResourceTag/cloudshrink_enable: 'true'
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ssm:GetCommandInvocation
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+                Condition:
+                  StringLikeIfExists:
+                    iam:PassedToService:
+                      - ec2.amazonaws.com
 Outputs:
   ApiUrl:
     Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com

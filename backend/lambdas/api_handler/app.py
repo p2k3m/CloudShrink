@@ -72,10 +72,19 @@ def lambda_handler(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
       accounts = _scan_table(ACCOUNTS_TABLE)
       volumes = _scan_table(VOLUMES_TABLE)
       protected = [v for v in volumes if str(v.get('eligible', '')).lower() == 'true']
+      
+      # Get current account details
+      current_account_id = boto3.client('sts').get_caller_identity()['Account']
+      external_id = os.environ.get('SATELLITE_EXTERNAL_ID', '')
+      
       return asdict(Response.ok({
         'savings': '0 GB-month',  # Placeholder logic
         'protected_volumes': len(protected),
-        'account_count': len(accounts)
+        'account_count': len(accounts),
+        'config': {
+          'currentAccountId': current_account_id,
+          'externalId': external_id
+        }
       }))
   except Exception as exc:  # noqa: BLE001
     logger.exception('Unhandled error')
