@@ -3,6 +3,7 @@ import Dashboard from './components/Dashboard';
 import LoginPage from './components/LoginPage';
 import VolumeManager from './components/VolumeManager';
 import PolicyPage from './components/PolicyPage';
+import OnboardingPage from './components/OnboardingPage';
 import { useEffect, useState } from 'react';
 import { fetchSession } from './services/auth';
 import Layout from './components/Layout';
@@ -31,6 +32,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/volumes" element={<VolumeManager />} />
         <Route path="/policies" element={<PolicyPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Layout>

@@ -38,3 +38,7 @@ export async function savePolicy(policy: unknown) {
   const c = await client();
   await c.post('/policies', policy);
 }
+export async function addAccount(account: { accountId: string; externalId: string }) {
+  const c = await client();
+  await c.post('/accounts', account);
+}

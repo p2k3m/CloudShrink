@@ -9,6 +9,7 @@ const navItems = [
   { path: '/', label: 'Dashboard' },
   { path: '/volumes', label: 'Volume Manager' },
   { path: '/policies', label: 'Policies' },
+  { path: '/onboarding', label: 'Onboarding' },
 ];
 
 export default function Layout({ children }: Props) {
