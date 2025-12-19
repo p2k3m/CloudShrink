@@ -186,6 +186,16 @@ Resources:
     Properties:
       Name: !Sub "${StackName}-api"
       ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
   ApiIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
