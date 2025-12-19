@@ -191,6 +191,7 @@ Resources:
     Properties:
       ApiId: !Ref ApiGateway
       IntegrationType: AWS_PROXY
+      PayloadFormatVersion: "2.0"
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations
   ApiRouteAccountsGet:
     Type: AWS::ApiGatewayV2::Route
