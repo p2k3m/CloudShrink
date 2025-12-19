@@ -93,6 +93,11 @@ Resources:
       BucketName: !Sub "${AWS::AccountId}-${StackName}-frontend"
       WebsiteConfiguration:
         IndexDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
   FrontendBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
