@@ -37,6 +37,8 @@ Resources:
     Properties:
       TableName: !Sub "${StackName}-Accounts"
       BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
       AttributeDefinitions:
         - AttributeName: accountId
           AttributeType: S
@@ -304,6 +306,10 @@ Resources:
                   - dynamodb:BatchWriteItem
                 Resource: !GetAtt VolumesTable.Arn
               - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                Resource: !GetAtt AccountsTable.Arn
+              - Effect: Allow
                 Action: sts:AssumeRole
                 Resource: !Sub arn:aws:iam::*:role/CloudShrinkSatelliteRole
   DiscoveryFunction:
@@ -320,7 +326,19 @@ Resources:
       Environment:
         Variables:
           VOLUMES_TABLE: !Ref VolumesTable
+          ACCOUNTS_TABLE: !Ref AccountsTable
           SATELLITE_ROLE_NAME: CloudShrinkSatelliteRole
+      Events:
+        AccountAdded:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt AccountsTable.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 1
+        ScheduledScan:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
   EvaluationFunctionRole:
     Type: AWS::IAM::Role
     Properties:
