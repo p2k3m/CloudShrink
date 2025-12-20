@@ -7,6 +7,8 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [oneClickError, setOneClickError] = useState('');
+  const [oneClickSuccess, setOneClickSuccess] = useState('');
   const [config, setConfig] = useState<{ currentAccountId: string; externalId: string } | null>(null);
 
   useEffect(() => {
@@ -20,17 +22,21 @@ export default function OnboardingPage() {
   const handleOneClick = async () => {
     if (!config) return;
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setOneClickError('');
+    setOneClickSuccess('');
     try {
       await addAccount({
         accountId: config.currentAccountId,
         externalId: config.externalId
       });
-      setSuccess(`Current account (${config.currentAccountId}) onboarded successfully!`);
+      setOneClickSuccess(`Current account (${config.currentAccountId}) onboarded successfully!`);
+      // Force an alert to ensure the user sees the feedback
+      window.alert('Account onboarded successfully!');
     } catch (err) {
-      setError('Failed to onboard current account. Please try again.');
       console.error(err);
+      const msg = 'Failed to onboard current account. Please check console/logs.';
+      setOneClickError(msg);
+      window.alert(msg);
     } finally {
       setLoading(false);
     }
@@ -140,6 +146,7 @@ Outputs:
             <div><strong>Role:</strong> Ready (Self-Managed)</div>
           </div>
           <button
+            type="button"
             onClick={handleOneClick}
             disabled={loading}
             className="btn-primary"
@@ -155,6 +162,9 @@ Outputs:
           >
             {loading ? 'Onboarding...' : 'Onboard This Account'}
           </button>
+
+          {oneClickError && <div style={{ color: '#ef4444', marginTop: '1rem', fontWeight: 'bold' }}>{oneClickError}</div>}
+          {oneClickSuccess && <div style={{ color: '#10b981', marginTop: '1rem', fontWeight: 'bold' }}>{oneClickSuccess}</div>}
         </div>
       )}
 
