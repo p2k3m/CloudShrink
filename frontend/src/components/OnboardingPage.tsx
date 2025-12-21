@@ -20,7 +20,11 @@ export default function OnboardingPage() {
   }, []);
 
   const handleOneClick = async () => {
-    if (!config) return;
+    window.alert('Debug: Button Clicked! Starting process...');
+    if (!config) {
+      window.alert('Debug: No config found!');
+      return;
+    }
     setLoading(true);
     setOneClickError('');
     setOneClickSuccess('');
@@ -29,12 +33,11 @@ export default function OnboardingPage() {
         accountId: config.currentAccountId,
         externalId: config.externalId
       });
+      window.alert(`Debug: Success! Onboarded ${config.currentAccountId}`);
       setOneClickSuccess(`Current account (${config.currentAccountId}) onboarded successfully!`);
-      // Force an alert to ensure the user sees the feedback
-      window.alert('Account onboarded successfully!');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      const msg = 'Failed to onboard current account. Please check console/logs.';
+      const msg = `Debug: Failed! ${err.message || JSON.stringify(err)}`;
       setOneClickError(msg);
       window.alert(msg);
     } finally {
@@ -152,15 +155,16 @@ Outputs:
             className="btn-primary"
             style={{
               padding: '0.75rem 1.5rem',
-              background: loading ? '#6366f1' : '#4f46e5',
-              color: 'white',
-              border: 'none',
+              background: loading ? '#6366f1' : '#ff9900', // Orange debug color
+              color: 'black', // High contrast
+              border: '2px solid red', // Debug border
               borderRadius: '4px',
               cursor: loading ? 'not-allowed' : 'pointer',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              fontSize: '1.2rem'
             }}
           >
-            {loading ? 'Onboarding...' : 'Onboard This Account'}
+            {loading ? 'Processing...' : '⚠️ CLICK ME (v2) ⚠️'}
           </button>
 
           {oneClickError && <div style={{ color: '#ef4444', marginTop: '1rem', fontWeight: 'bold' }}>{oneClickError}</div>}
