@@ -328,17 +328,29 @@ Resources:
           VOLUMES_TABLE: !Ref VolumesTable
           ACCOUNTS_TABLE: !Ref AccountsTable
           SATELLITE_ROLE_NAME: CloudShrinkSatelliteRole
-      Events:
-        AccountAdded:
-          Type: DynamoDB
-          Properties:
-            Stream: !GetAtt AccountsTable.StreamArn
-            StartingPosition: LATEST
-            BatchSize: 1
-        ScheduledScan:
-          Type: Schedule
-          Properties:
-            Schedule: rate(1 hour)
+  DiscoveryFunctionStreamMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt AccountsTable.StreamArn
+      FunctionName: !Ref DiscoveryFunction
+      StartingPosition: LATEST
+      BatchSize: 1
+      Enabled: true
+  DiscoveryFunctionScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(1 hour)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt DiscoveryFunction.Arn
+          Id: DiscoveryFunctionScheduleTarget
+  DiscoveryFunctionSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DiscoveryFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DiscoveryFunctionScheduleRule.Arn
   EvaluationFunctionRole:
     Type: AWS::IAM::Role
     Properties:
