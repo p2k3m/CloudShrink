@@ -310,6 +310,13 @@ Resources:
                   - dynamodb:Scan
                 Resource: !GetAtt AccountsTable.Arn
               - Effect: Allow
+                Action:
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:DescribeStream
+                  - dynamodb:ListStreams
+                Resource: !GetAtt AccountsTable.StreamArn
+              - Effect: Allow
                 Action: sts:AssumeRole
                 Resource: !Sub arn:aws:iam::*:role/CloudShrinkSatelliteRole
   DiscoveryFunction:
