@@ -9,6 +9,14 @@ permissions:
   contents: read
 
 jobs:
+  check-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      has-role: ${{ steps.check.outputs.has-role }}
+    steps:
+      - id: check
+        run: echo "has-role=${{ secrets.DEPLOY_ROLE_ARN != '' }}" >> "$GITHUB_OUTPUT"
+
   deploy:
     runs-on: ubuntu-latest
     env:
